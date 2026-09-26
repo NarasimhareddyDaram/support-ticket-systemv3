@@ -1,7 +1,5 @@
 # support-ticket-systemv3
 
-# Support Ticket System
-
 A support ticket management system built with **React**, **Vite**, and **Supabase**, allowing customers to raise issues and agents to track, respond to, and resolve them.
 
 ## 🔗 Live Demo
@@ -89,10 +87,6 @@ Key tables used in this project:
 
 - **Customer** — Can create tickets and reply to existing ones
 - **Agent** — Can view all tickets, respond to customers, and update ticket status/priority
-
-## 📸 Screenshots
-
-*(Add screenshots of the ticket list, ticket detail view, and agent dashboard here)*
 
 ## 📝 License
 
