@@ -33,14 +33,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, display_name, email, role')
+      .select('id, display_name, role')
       .eq('id', user.id)
       .maybeSingle();
     if (error) {
       console.error('profile fetch failed', error);
       return;
     }
-    if (data) setProfile(data as Profile);
+    if (data) {
+      setProfile({
+        id: (data as { id: string }).id,
+        display_name: (data as { display_name: string }).display_name,
+        role: (data as { role: Profile['role'] }).role,
+        email: user.email ?? '',
+      });
+    }
   }, []);
 
   useEffect(() => {

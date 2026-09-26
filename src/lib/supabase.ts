@@ -16,6 +16,12 @@ export type Profile = {
   role: Role;
 };
 
+export type PublicProfile = {
+  id: string;
+  display_name: string;
+  role: Role;
+};
+
 export type Ticket = {
   id: string;
   user_id: string;

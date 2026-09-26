@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { Ticket, TicketComment, Profile, TicketStatus } from '@/lib/supabase';
+import type { Ticket, TicketComment, PublicProfile, TicketStatus } from '@/lib/supabase';
 import { STATUS_META, STATUS_ORDER, PRIORITY_META, formatDate, timeAgo } from '@/lib/ui';
 import { useAuth } from '@/lib/auth';
 import { Send, Loader2, ArrowLeft, Clock, Flag, CheckCircle2, XCircle } from 'lucide-react';
@@ -19,12 +19,13 @@ export default function TicketDetail({
   const isOwner = ticket.user_id === profile?.id;
 
   const [comments, setComments] = useState<TicketComment[]>([]);
-  const [authors, setAuthors] = useState<Record<string, Profile>>({});
+  const [authors, setAuthors] = useState<Record<string, PublicProfile>>({});
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
   const [loadingComments, setLoadingComments] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  const ticketOwnerName = authors[ticket.user_id]?.display_name ?? (isOwner ? profile?.display_name : null) ?? 'Unknown';
 
   useEffect(() => {
     (async () => {
@@ -42,17 +43,16 @@ export default function TicketDetail({
       }
       setComments(data as TicketComment[]);
 
-      const uniqueIds = [...new Set((data as TicketComment[]).map((c) => c.user_id))];
-      if (uniqueIds.length > 0) {
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, display_name, email, role')
-          .in('id', uniqueIds);
-        if (profilesData) {
-          const map: Record<string, Profile> = {};
-          (profilesData as Profile[]).forEach((p) => { map[p.id] = p; });
-          setAuthors(map);
-        }
+      const commentIds = (data as TicketComment[]).map((c) => c.user_id);
+      const uniqueIds = [...new Set([ticket.user_id, ...commentIds])];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, display_name, role')
+        .in('id', uniqueIds);
+      if (profilesData) {
+        const map: Record<string, PublicProfile> = {};
+        (profilesData as PublicProfile[]).forEach((p) => { map[p.id] = p; });
+        setAuthors(map);
       }
       setLoadingComments(false);
     })();
@@ -84,7 +84,7 @@ export default function TicketDetail({
 
     setComments((prev) => [...prev, data as TicketComment]);
     if (profile && !authors[profile.id]) {
-      setAuthors((prev) => ({ ...prev, [profile.id]: profile }));
+      setAuthors((prev) => ({ ...prev, [profile.id]: { id: profile.id, display_name: profile.display_name, role: profile.role } }));
     }
     setBody('');
   };
@@ -178,9 +178,9 @@ export default function TicketDetail({
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-5">
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5">
           <div className="flex items-center gap-2.5 mb-3">
-            <Avatar name={isOwner ? profile?.display_name : 'You'} />
+            <Avatar name={ticketOwnerName} />
             <div>
-              <p className="text-sm font-medium text-slate-900">{isOwner ? profile?.display_name : 'Ticket author'}</p>
+              <p className="text-sm font-medium text-slate-900">{ticketOwnerName}</p>
               <p className="text-xs text-slate-400">{formatDate(ticket.created_at)}</p>
             </div>
             <span className="ml-auto text-xs text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-full">Original request</span>
